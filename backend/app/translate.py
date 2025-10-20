@@ -15,9 +15,10 @@ class TranslationRequest(BaseModel):
     context: str = "neutral"
 
 @router.post("/translate")
+
 def translate(req: TranslationRequest):
     prompt = f"Translate this into {req.target_lang} with {req.context} tone:\n{req.text}"
-    response = openai.ChatCompletion.create(
+    response = openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.5

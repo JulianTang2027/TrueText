@@ -1,0 +1,76 @@
+# ========================================
+# Global ignores
+# ========================================
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python virtual environments
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Node / Expo / React Native
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Expo build & cache
+.expo/
+.expo-shared/
+web-build/
+dist/
+build/
+*.expo/
+
+# Android / iOS build artifacts
+android/
+ios/
+*.apk
+*.aab
+*.ipa
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Environment / secrets
+.env
+.env.local
+.env.production
+.env.development
+
+# OS-specific
+*.tmp
+*.temp
+*.bak
+
+# Local database / storage
+*.db
+*.sqlite
+*.sqlite3
+
+# Python specific (backend)
+backend/__pycache__/
+backend/.pytest_cache/
+backend/*.egg-info/
+backend/.env
+
+# Byte-compiled / optimized / DLL files
+*.dll
+*.so
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints

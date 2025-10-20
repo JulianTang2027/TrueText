@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.translate import router as translate_router
 
-app = FastAPI(title="Contextual Translator")
+app = FastAPI(title="TrueText")
 
 app.add_middleware(
     CORSMiddleware,

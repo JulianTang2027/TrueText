@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -16,6 +17,7 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Colors } from "@/constants/theme";
+import CameraModal from "@/components/camera-modal";
 
 interface TranslationRequest {
   text: string;
@@ -33,6 +35,7 @@ export default function TranslationScreen() {
   const [translation, setTranslation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isReversed, setIsReversed] = useState(false); // false = English→Danish, true = Danish→English
+  const [showCamera, setShowCamera] = useState(false);
 
   const translateText = async () => {
     if (!inputText.trim()) {
@@ -48,20 +51,40 @@ export default function TranslationScreen() {
         context: "neutral",
       };
 
-      const response = await fetch("http://127.0.0.1:8000/translate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(request),
-      });
+      const endpoints = [
+        "http://192.168.242.195:8000/translate", // Expo Go
+        "http://localhost:8000/translate",
+        "http://127.0.0.1:8000/translate",
+      ];
 
-      if (!response.ok) {
-        throw new Error("Translation failed");
+      let response;
+      let lastError;
+
+      for (const endpoint of endpoints) {
+        try {
+          response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(request),
+          });
+
+          if (!response.ok) {
+            throw new Error("Translation failed");
+          }
+
+          const data: TranslationResponse = await response.json();
+          setTranslation(data.translation);
+          return;
+        } catch (error) {
+          lastError = error;
+          console.log(`Failed to connect to ${endpoint}:`, error);
+          continue;
+        }
       }
 
-      const data: TranslationResponse = await response.json();
-      setTranslation(data.translation);
+      throw lastError || new Error("All endpoints failed");
     } catch (error) {
       Alert.alert("Error", "Failed to translate text. Please try again.");
       console.error("Translation error:", error);
@@ -98,6 +121,16 @@ export default function TranslationScreen() {
   const toggleLanguageDirection = () => {
     setIsReversed(!isReversed);
     setTranslation("");
+  };
+
+  const handleImageCaptured = (imageUri: string) => {
+    // TODO: Implement OCR (AR vision -> We can use google vision)
+    Alert.alert(
+      "Image Captured",
+      "OCR functionality will be implemented to extract text from the image. For now, you can manually type the text you see in the image.",
+      [{ text: "OK", style: "default" }]
+    );
+    setShowCamera(false);
   };
 
   const isDark = colorScheme === "dark";
@@ -149,9 +182,18 @@ export default function TranslationScreen() {
         </ThemedView>
 
         <ThemedView style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>
-            Enter text to translate
-          </ThemedText>
+          <ThemedView style={styles.inputHeader}>
+            <ThemedText style={styles.sectionTitle}>
+              Enter text to translate
+            </ThemedText>
+            <TouchableOpacity
+              style={styles.cameraButton}
+              onPress={() => setShowCamera(true)}
+            >
+              <Ionicons name="camera" size={20} color={colors.tint} />
+              <ThemedText style={styles.cameraButtonText}>Camera</ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
           <ThemedView
             style={[
               styles.textInputContainer,
@@ -250,6 +292,12 @@ export default function TranslationScreen() {
           </ThemedView>
         )}
       </ScrollView>
+
+      <CameraModal
+        visible={showCamera}
+        onClose={() => setShowCamera(false)}
+        onImageCaptured={handleImageCaptured}
+      />
     </ThemedView>
   );
 }
@@ -292,6 +340,28 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 24,
+  },
+  inputHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  cameraButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "rgba(65, 105, 225, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(65, 105, 225, 0.3)",
+  },
+  cameraButtonText: {
+    color: "#4169E1",
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 6,
   },
   sectionTitle: {
     fontSize: 15,

@@ -29,6 +29,12 @@ interface TranslationResponse {
   translation: string;
 }
 
+interface ImageTranslationResponse {
+  extracted_text: string;
+  translation: string;
+  error?: string;
+}
+
 export default function TranslationScreen() {
   const colorScheme = useColorScheme();
   const [inputText, setInputText] = useState("");
@@ -52,9 +58,12 @@ export default function TranslationScreen() {
       };
 
       const endpoints = [
-        "http://192.168.242.195:8000/translate", // Expo Go
+        // "http://192.168.242.195:8000/translate", // Expo Go
         "http://localhost:8000/translate",
-        "http://127.0.0.1:8000/translate",
+        // "http://10.0.42.143:8000/translate",
+        // "http://172.20.10.10:8000/translate",
+        // "http://10.0.48.62:8000/translate",
+        // "http://127.0.0.1:8000/translate",
       ];
 
       let response;
@@ -123,14 +132,69 @@ export default function TranslationScreen() {
     setTranslation("");
   };
 
+  const translateImage = async (imageUri: string) => {
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+
+      const imageResponse = await fetch(imageUri);
+      const blob = await imageResponse.blob();
+      formData.append("file", blob as any, "image.jpg");
+      formData.append("target_lang", isReversed ? "English" : "Danish");
+      formData.append("context", "neutral");
+
+      const endpoints = [
+        // "http://192.168.242.195:8000/translate-image", // Expo Go
+        "http://localhost:8000/translate-image",
+        // "http://10.0.42.143:8000/translate-image",
+        // "http://172.20.10.10:8000/translate-image",
+        // "http://10.0.48.62:8000/translate-image",
+      ];
+
+      let apiResponse;
+      let lastError;
+
+      for (const endpoint of endpoints) {
+        try {
+          console.log("Calling endpoint:", endpoint);
+          apiResponse = await fetch(endpoint, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!apiResponse.ok) {
+            throw new Error("Image translation failed");
+          }
+
+          const data: ImageTranslationResponse = await apiResponse.json();
+
+          if (data.error) {
+            Alert.alert("Error", data.error);
+            return;
+          }
+
+          setInputText(data.extracted_text);
+          setTranslation(data.translation);
+          return;
+        } catch (error) {
+          lastError = error;
+          console.log(`Failed to connect to ${endpoint}:`, error);
+          continue;
+        }
+      }
+
+      throw lastError || new Error("All endpoints failed");
+    } catch (error) {
+      Alert.alert("Error", "Failed to translate image. Please try again.");
+      console.error("Image translation error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleImageCaptured = (imageUri: string) => {
-    // TODO: Implement OCR (AR vision -> We can use google vision)
-    Alert.alert(
-      "Image Captured",
-      "OCR functionality will be implemented to extract text from the image. For now, you can manually type the text you see in the image.",
-      [{ text: "OK", style: "default" }]
-    );
     setShowCamera(false);
+    translateImage(imageUri);
   };
 
   const isDark = colorScheme === "dark";
